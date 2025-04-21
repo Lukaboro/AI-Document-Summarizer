@@ -4,6 +4,8 @@ __pycache__/
 *.pyo
 *.pyd
 *.env
+*.csv
+*.log
 .env
 
 # Virtual environments
@@ -23,3 +25,11 @@ env/
 
 # PyCharm settings
 .idea/
+
+# Afbeeldingen en logging uitsluiten
+app/images/
+logs/
+avatars/
+
+# kennisbank uitsluiten
+data/kb_data/
