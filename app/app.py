@@ -17,7 +17,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from data.rag_summarizer import enhance_summary_with_rag
 from data.utils import log_feedback
 
-# Hier de session_state initialisatie toevoegen
+# Session state initialisatie 
 if 'summary' not in st.session_state:
     st.session_state.summary = None
 if 'context_info' not in st.session_state:
@@ -32,6 +32,13 @@ if 'feedback_detail_step' not in st.session_state:
     st.session_state.feedback_detail_step = False
 if 'feedback_complete' not in st.session_state:
     st.session_state.feedback_complete = False
+# NIEUW: Chat-gerelateerde session state
+if 'chat_history' not in st.session_state:
+    st.session_state.chat_history = []
+if 'original_text' not in st.session_state:
+    st.session_state.original_text = None
+if 'chat_view_active' not in st.session_state:
+    st.session_state.chat_view_active = False
 
 # Zorg dat Python ook de rootmap kan vinden
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -68,12 +75,58 @@ st.markdown("""
         height: 80px;
         object-fit: cover;
     }
+    /* NIEUW: Chat styling */
+    .chat-container {
+        margin: 1rem 0;
+        border-radius: 10px;
+        padding: 1rem;
+        background-color: #f8f9fa;
+    }
+    .chat-message-user {
+        background-color: #e3f2fd;
+        border-radius: 10px;
+        padding: 0.8rem;
+        margin: 0.5rem 0;
+        text-align: right;
+        margin-left: 20%;
+    }
+    .chat-message-assistant {
+        background-color: #f0f0f0;
+        border-radius: 10px;
+        padding: 0.8rem;
+        margin: 0.5rem 0;
+        margin-right: 20%;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # Titel
 st.title("Document Summarizer")
 st.write("Upload je documenten, kies je voorkeuren, en ontvang een gepersonaliseerde samenvatting.")
+
+# Aangepaste styling voor avatars met geforceerde uniforme afmetingen
+st.markdown("""
+<style>
+    .avatar-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        margin-bottom: 10px;
+    }
+    .avatar-name {
+        margin-top: 5px;
+        font-weight: bold;
+    }
+    /* Deze CSS zorgt ervoor dat alle avatar-afbeeldingen dezelfde grootte hebben */
+    .uniform-avatar {
+        width: 80px !important;
+        height: 80px !important;
+        object-fit: cover !important;
+        border-radius: 50% !important;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # Avatar selectie
 st.markdown("### Kies je samenvattingsstijl")
@@ -84,7 +137,47 @@ if "selected_avatar" not in st.session_state:
 
 for i, (key, avatar) in enumerate(avatars_config.AVATARS.items()):
     with cols[i]:
-        st.image(os.path.join(avatars_config.AVATAR_IMAGES_PATH, f"{key}.jpg"), width=80, caption=avatar["name"])
+        # Probeer verschillende bestandsformaten
+        avatar_found = False
+        for ext in [".png", ".jpg", ".jpeg"]:
+            avatar_img_path = os.path.join(avatars_config.AVATAR_IMAGES_PATH, f"{key}{ext}")
+            if os.path.exists(avatar_img_path):
+                try:
+                    # Laad de afbeelding en gebruik HTML om de grootte af te dwingen
+                    from PIL import Image
+                    import base64
+                    from io import BytesIO
+                    
+                    img = Image.open(avatar_img_path)
+                    buffered = BytesIO()
+                    img.save(buffered, format=img.format or "PNG")
+                    img_str = base64.b64encode(buffered.getvalue()).decode()
+                    
+                    # Gebruik HTML met ingesloten base64 afbeelding en CSS class
+                    st.markdown(
+                        f"""
+                        <div class="avatar-container">
+                            <img src="data:image/{img.format.lower() if img.format else 'png'};base64,{img_str}" class="uniform-avatar">
+                            <div class="avatar-name">{avatar['name']}</div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                    avatar_found = True
+                    break
+                except Exception as e:
+                    st.error(f"Fout bij laden afbeelding: {str(e)}")
+                    pass
+        
+        # Als geen afbeelding gevonden is, toon placeholder
+        if not avatar_found:
+            st.markdown(f"""
+            <div class="avatar-container">
+                <div style="width:80px;height:80px;border-radius:50%;background-color:#f0f0f0;display:flex;justify-content:center;align-items:center;">📷</div>
+                <div class="avatar-name">{avatar['name']}</div>
+            </div>
+            """, unsafe_allow_html=True)
+        
         if st.button(f"Selecteer {avatar['name']}", key=f"avatar_{key}"):
             st.session_state.selected_avatar = key
 
@@ -359,11 +452,160 @@ def summarize_text(text, summary_length, style, formality, purpose, industry, ho
         st.error(f"❌ Error generating summary: {e}")
         return "Er is een fout opgetreden bij het genereren van de samenvatting. Probeer het opnieuw.","Error"
 
+# NIEUW: Verbeterde Chat functionaliteit met avatar stijl
+def generate_chat_response(query, document_text, summary, chat_history, avatar_system, use_rag=True):
+    try:
+        client = anthropic.Anthropic(api_key=anthropic_api_key)
+        
+        # Bouw chat history formaat voor Claude API
+        formatted_history = []
+        for entry in chat_history:
+            formatted_history.append({"role": entry["role"], "content": entry["content"]})
+        
+        # Controleer of we RAG moeten gebruiken voor meer context
+        context_chunks = document_text
+        if use_rag:
+            try:
+                # Gebruik de standaard enhance_summary_with_rag zonder extra parameters
+                enhanced_text, context_info = enhance_summary_with_rag(client, document_text)
+                
+                # Controleer of we relevante inhoud hebben
+                if isinstance(context_info, dict) and 'relevante_context' in context_info:
+                    context_chunks = context_info['relevante_context']
+                elif isinstance(context_info, dict) and 'relevante_items' in context_info:
+                    # Gebruik de relevante items als er geen directe context is
+                    context_chunks = document_text + "\n\nRelevante context: " + ", ".join(context_info['relevante_items'])
+            except Exception as e:
+                st.info(f"Info: RAG werkt beperkt voor chat vragen. Valt terug op volledige document.")
+                # Valt terug op het volledige document als RAG faalt
+                pass
+        
+        # Bouw system prompt met behoud van avatar persoonlijkheid
+        system_prompt = f"""
+        {avatar_system}
+        
+        Je bent een persoonlijke financiële assistent met een unieke communicatiestijl.
+        
+        BELANGRIJKE INSTRUCTIES:
+        1. Behoud ALTIJD je persoonlijke communicatiestijl wanneer je antwoord geeft.
+        2. Baseer je antwoord UITSLUITEND op informatie uit het document.
+        3. Als de vraag niet beantwoord kan worden met de informatie in het document, zeg dit op een vriendelijke manier in je eigen stijl.
+        4. Gebruik geen externe kennis die niet in het document staat.
+        5. Je mag het document nooit rechtstreeks citeren zonder het aan te passen naar je eigen stijl.
+        
+        DISCLAIMER: Benadruk waar nodig dat je antwoorden gebaseerd zijn op het document en geen persoonlijk financieel advies zijn.
+        """
+        
+        # Voorbereiding van de context voor het model
+        context = f"""
+        DOCUMENT SAMENVATTING:
+        {summary}
+        
+        RELEVANTE DELEN UIT HET DOCUMENT:
+        {context_chunks}
+        
+        SPECIFIEKE VRAAG VAN DE GEBRUIKER OVER HET DOCUMENT:
+        {query}
+        """
+        
+        # Eerste stap: Antwoord genereren met avatar-persoonlijkheid
+        initial_response = client.messages.create(
+            model="claude-3-5-sonnet-20241022",
+            max_tokens=1500,
+            temperature=0.5,  # Iets hogere temperatuur voor meer persoonlijkheid
+            system=system_prompt,
+            messages=[
+                {"role": "user", "content": f"Hier is wat context voor mijn vraag: {context}"},
+                *formatted_history,
+                {"role": "user", "content": query}
+            ]
+        )
+        response_text = initial_response.content[0].text
+        
+        # Tweede stap: Validatie / fact-checking
+        validation_prompt = f"""
+        Je bent een strikte validator die controleert of antwoorden over financiële documenten accuraat zijn.
+        
+        Evalueer het volgende antwoord:
+        
+        VRAAG: {query}
+        
+        GEGEVEN ANTWOORD: {response_text}
+        
+        DOCUMENT CONTEXT: {context}
+        
+        Controleer alleen op feitelijke onjuistheden of beweringen die niet in het document staan.
+        Beoordeel NIET op stijl, toon of persoonlijkheid - die aspecten moeten behouden blijven.
+        
+        Als er feitelijke problemen zijn, geef aan welke claims niet kloppen. Als alle feiten correct zijn, antwoord alleen met "GOEDGEKEURD".
+        """
+        
+        validation_check = client.messages.create(
+            model="claude-3-5-sonnet-20241022",
+            max_tokens=500,
+            temperature=0.1,
+            messages=[{"role": "user", "content": validation_prompt}]
+        )
+        
+        validation_result = validation_check.content[0].text
+        
+        # Als het antwoord niet is goedgekeurd, filter het maar behoud de stijl
+        if "GOEDGEKEURD" not in validation_result.upper():
+            # Herformuleer om problematische delen te verwijderen, maar behoud stijl
+            correction_prompt = f"""
+            Je antwoord bevat mogelijk feitelijke informatie die niet in het document staat.
+            
+            Probleem: {validation_result}
+            
+            Herformuleer je antwoord met dezelfde persoonlijke stijl en toon, maar:
+            1. Verwijder of corrigeer claims die niet door het document worden ondersteund
+            2. Behoud je oorspronkelijke stem, stijl en persoonlijkheid
+            3. Wees explicieter wanneer je aangeeft dat iets niet in het document staat
+            
+            Oorspronkelijke vraag: {query}
+            Oorspronkelijk antwoord in jouw stijl: {response_text}
+            """
+            
+            correction = client.messages.create(
+                model="claude-3-5-sonnet-20241022",
+                max_tokens=1500,
+                temperature=0.4,  # Behoud enige creativiteit voor de stijl
+                system=system_prompt,  # Hergebruik dezelfde avatar-instructies
+                messages=[{"role": "user", "content": correction_prompt}]
+            )
+            
+            final_response = correction.content[0].text
+        else:
+            final_response = response_text
+            
+        return final_response
+    except Exception as e:
+        st.error(f"Error genereren chatantwoord: {str(e)}")
+        return "Er is een fout opgetreden bij het genereren van een antwoord. Probeer het opnieuw."
+# Functie voor chat geschiedenis loggen
+def log_chat_interaction(question, answer, document_info=None):
+    """Log chat interactions for evaluation"""
+    log_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'chat_logs.csv')
+    
+    # Create file with headers if it doesn't exist
+    if not os.path.exists(log_file):
+        with open(log_file, 'w', newline='', encoding='utf-8') as f:
+            f.write("timestamp,question_length,answer_length,avatar,rag_used\n")
+    
+    # Add log entry
+    with open(log_file, 'a', newline='', encoding='utf-8') as f:
+        document_info = document_info or {}
+        log_entry = f"{datetime.now().isoformat()},{len(question)},{len(answer)},"
+        log_entry += f"{document_info.get('avatar', 'unknown')},{document_info.get('rag_used', True)}\n"
+        f.write(log_entry)
+
 # Hoofdsectie
 if uploaded_files:
     st.header("Verwerking")
     with st.spinner("Documenten verwerken..."):
         combined_text = process_documents(uploaded_files)
+        # NIEUW: Bewaar de originele tekst voor de chatbot
+        st.session_state.original_text = combined_text
     st.success(f"Succesvol {len(uploaded_files)} document(en) verwerkt.")
     with st.expander("Bekijk ruwe tekst"):
         st.text_area("Gecombineerde tekst", combined_text, height=200)
@@ -390,8 +632,11 @@ if uploaded_files:
             st.session_state.summary = summary
             st.session_state.context_info = context_info
             st.session_state.has_generated = True
+            
+            # Reset chat historiek als nieuwe samenvatting is gemaakt
+            st.session_state.chat_history = []
 
-           # Reset feedback state voor nieuwe samenvatting
+            # Reset feedback state voor nieuwe samenvatting
             st.session_state.feedback = None
             st.session_state.feedback_detail_step = False
             st.session_state.feedback_complete = False
@@ -406,15 +651,16 @@ if uploaded_files:
                 }
             )
                 
-# Vervang het "Technische details" gedeelte (rond regel 300-320) door:
-    # Na de knop, controleer of er een samenvatting is om te tonen
-    if 'summary' in st.session_state and st.session_state.summary is not None:
-        st.header("Samenvatting")
+# Na de knop, controleer of er een samenvatting is om te tonen
+if st.session_state.summary is not None:
+    st.header("Samenvatting")
+    
+    # NIEUW: Tabbladen voor samenvatting en chat
+    tab1, tab2 = st.tabs(["Samenvatting", f"Stel {avatar_info['name']} bijkomende vragen over het ingeladen document"])
+   
+    with tab1:
         st.write(st.session_state.summary)
-
-        # Voeg een anchor toe voor het feedbackgedeelte
-        st.markdown("<div id='feedback-section'></div>", unsafe_allow_html=True)
-
+        
         # Optioneel: Toon informatie over het RAG-gebruik
         with st.expander("Technische details"):
             if use_rag:
@@ -436,97 +682,153 @@ if uploaded_files:
                 else:
                     st.write("Gebruikte context:", st.session_state.context_info)
             else:
-                st.info("Deze samenvatting is gegenereerd zonder gebruik van de kennisbank.")            
-
+                st.info("Deze samenvatting is gegenereerd zonder gebruik van de kennisbank.")
+                
         # Hier de feedback knoppen toevoegen
-# Eerst zorgen we dat de juiste controles plaatsvinden voor het tonen van het formulier
-if st.session_state.feedback is None:
-    st.write("Was deze samenvatting nuttig?")
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("👍 Ja", key="btn_yes"):
-            st.session_state.feedback = "positief"
-            st.session_state.feedback_detail_step = True
-            # Log initiële feedback
-            log_feedback(
-                feedback_type="positief",
-                feedback_details="initial_response",
-                document_info={
-                    'length': len(combined_text),
-                    'avatar': selected_avatar,
-                    'rag_used': use_rag
-                }
-            )
-            st.rerun()
-    with col2:
-        if st.button("👎 Nee", key="btn_no"):
-            st.session_state.feedback = "negatief"
-            st.session_state.feedback_detail_step = True
-            # Log initiële feedback
-            log_feedback(
-                feedback_type="negatief",
-                feedback_details="initial_response",
-                document_info={
-                    'length': len(combined_text),
-                    'avatar': selected_avatar,
-                    'rag_used': use_rag
-                }
-            )
-            st.rerun()
-# Toon het gedetailleerde feedbackformulier ALLEEN als we in die stap zijn én nog niet klaar zijn
-elif st.session_state.get('feedback_detail_step', False) and not st.session_state.get('feedback_complete', False):
-    # Toon een formulier voor meer details
-    if st.session_state.feedback == "positief":
-        st.success("Fijn dat je de samenvatting nuttig vond!")
-        feedback_detail = st.radio(
-            "Wat vond je het meest waardevol?",
-            ["De duidelijkheid", "De volledigheid", "De uitleg van termen", "De lengte was perfect", "Anders"]
-        )
-    else:
-        st.warning("Bedankt voor je feedback. Help ons verbeteren!")
-        feedback_detail = st.radio(
-            "Wat kon beter?",
-            ["Te lang", "Te kort", "Miste belangrijke informatie", "Verwarrende uitleg", "Kennisbank werd niet goed gebruikt", "Anders"]
-        )
-    
-    other_feedback = ""
-    if feedback_detail == "Anders":
-        other_feedback = st.text_area("Vertel ons meer:")
-    
-    if st.button("Verstuur feedback"):
-        # Log gedetailleerde feedback
-        detail_to_log = other_feedback if feedback_detail == "Anders" else feedback_detail
-        log_feedback(
-            feedback_type=st.session_state.feedback,
-            feedback_details=detail_to_log,
-            document_info={
-                'length': len(combined_text),
-                'avatar': selected_avatar,
-                'rag_used': use_rag
-            }
-        )
-        st.session_state.feedback_complete = True
-        st.rerun()
-# Het formulier is ingevuld en de feedback is compleet - toon alleen het bedankbericht
-elif st.session_state.get('feedback_complete', False):
-    # Toon een bericht dat feedback is ontvangen
-    if st.session_state.feedback == "positief":
-        st.success("Bedankt voor je feedback! We zijn blij dat de samenvatting nuttig was.")
-    else:
-        st.info("Bedankt voor je feedback. We gebruiken deze om onze tool te verbeteren.")
+        if st.session_state.feedback is None:
+            st.write("Was deze samenvatting nuttig?")
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("👍 Ja", key="btn_yes"):
+                    st.session_state.feedback = "positief"
+                    st.session_state.feedback_detail_step = True
+                    # Log initiële feedback
+                    log_feedback(
+                        feedback_type="positief",
+                        feedback_details="initial_response",
+                        document_info={
+                            'length': len(combined_text),
+                            'avatar': selected_avatar,
+                            'rag_used': use_rag
+                        }
+                    )
+                    st.rerun()
+            with col2:
+                if st.button("👎 Nee", key="btn_no"):
+                    st.session_state.feedback = "negatief"
+                    st.session_state.feedback_detail_step = True
+                    # Log initiële feedback
+                    log_feedback(
+                        feedback_type="negatief",
+                        feedback_details="initial_response",
+                        document_info={
+                            'length': len(combined_text),
+                            'avatar': selected_avatar,
+                            'rag_used': use_rag
+                        }
+                    )
+                    st.rerun()
+        # Toon het gedetailleerde feedbackformulier ALLEEN als we in die stap zijn én nog niet klaar zijn
+        elif st.session_state.get('feedback_detail_step', False) and not st.session_state.get('feedback_complete', False):
+            # Toon een formulier voor meer details
+            if st.session_state.feedback == "positief":
+                st.success("Fijn dat je de samenvatting nuttig vond!")
+                feedback_detail = st.radio(
+                    "Wat vond je het meest waardevol?",
+                    ["De duidelijkheid", "De volledigheid", "De uitleg van termen", "De lengte was perfect", "Anders"]
+                )
+            else:
+                st.warning("Bedankt voor je feedback. Help ons verbeteren!")
+                feedback_detail = st.radio(
+                    "Wat kon beter?",
+                    ["Te lang", "Te kort", "Miste belangrijke informatie", "Verwarrende uitleg", "Kennisbank werd niet goed gebruikt", "Anders"]
+                )
+            
+            other_feedback = ""
+            if feedback_detail == "Anders":
+                other_feedback = st.text_area("Vertel ons meer:")
+            
+            if st.button("Verstuur feedback"):
+                # Log gedetailleerde feedback
+                detail_to_log = other_feedback if feedback_detail == "Anders" else feedback_detail
+                log_feedback(
+                    feedback_type=st.session_state.feedback,
+                    feedback_details=detail_to_log,
+                    document_info={
+                        'length': len(combined_text),
+                        'avatar': selected_avatar,
+                        'rag_used': use_rag
+                    }
+                )
+                st.session_state.feedback_complete = True
+                st.rerun()
+        # Het formulier is ingevuld en de feedback is compleet - toon alleen het bedankbericht
+        elif st.session_state.get('feedback_complete', False):
+            # Toon een bericht dat feedback is ontvangen
+            if st.session_state.feedback == "positief":
+                st.success("Bedankt voor je feedback! We zijn blij dat de samenvatting nuttig was.")
+            else:
+                st.info("Bedankt voor je feedback. We gebruiken deze om onze tool te verbeteren.")
 
-    # Toon download opties
-    st.header("Download opties")
-    if output_format == "PDF":
-        pdf_buffer = create_pdf(st.session_state.summary)
-        st.markdown(get_download_link(pdf_buffer, "samenvatting.pdf", "pdf"), unsafe_allow_html=True)
-    else:
-        docx_buffer = create_docx(st.session_state.summary)
-        st.markdown(get_download_link(docx_buffer, "samenvatting.docx", "docx"), unsafe_allow_html=True)
+            # Toon download opties
+            st.header("Download opties")
+            if output_format == "PDF":
+                pdf_buffer = create_pdf(st.session_state.summary)
+                st.markdown(get_download_link(pdf_buffer, "samenvatting.pdf", "pdf"), unsafe_allow_html=True)
+            else:
+                docx_buffer = create_docx(st.session_state.summary)
+                st.markdown(get_download_link(docx_buffer, "samenvatting.docx", "docx"), unsafe_allow_html=True)
+    
+    # NIEUW: Chat interface in tweede tab
+    with tab2:
+        st.write("Stel vragen over het document en krijg antwoorden in de stijl van de gekozen avatar.")
+        st.write("De chatbot geeft alleen antwoorden gebaseerd op de inhoud van het document.")
+        
+        # Waarschuwing/disclaimer
+        st.warning("⚠️ Let op: Deze chatbot geeft alleen informatie uit het document. Het geeft geen persoonlijk financieel advies en vervangt niet het advies van een financieel professional.")
+        
+        # Toon chat geschiedenis
+        st.subheader("Gesprek")
+        chat_container = st.container()
+        
+        with chat_container:
+            for message in st.session_state.chat_history:
+                if message["role"] == "user":
+                    st.markdown(f"<div class='chat-message-user'>{message['content']}</div>", unsafe_allow_html=True)
+                else:
+                    st.markdown(f"<div class='chat-message-assistant'>{message['content']}</div>", unsafe_allow_html=True)
+        
+        # Chat input
+        user_question = st.text_input("Stel een vraag over het document:", key="chat_input")
+        
+        if st.button("Verstuur vraag", key="send_question"):
+            if user_question:
+                # Toon de vraag
+                st.session_state.chat_history.append({"role": "user", "content": user_question})
+                
+                with st.spinner("Antwoord genereren..."):
+                    # Haal system prompt op van avatar
+                    avatar_system = avatars_config.AVATARS[selected_avatar]["system_role"]
+                    
+                    # Genereer antwoord
+                    response = generate_chat_response(
+                        user_question,
+                        st.session_state.original_text,
+                        st.session_state.summary,
+                        st.session_state.chat_history,
+                        avatar_system,
+                        use_rag
+                    )
+                    
+                    # Voeg toe aan chat history
+                    st.session_state.chat_history.append({"role": "assistant", "content": response})
+                    
+                    # Log de interactie
+                    log_chat_interaction(
+                        user_question, 
+                        response, 
+                        document_info={
+                            'avatar': selected_avatar,
+                            'rag_used': use_rag
+                        }
+                    )
+                
+                # Clear the input
+                st.rerun()
 else:
     st.info("Upload één of meerdere documenten om te beginnen.")
 
 # Extra informatie
 st.sidebar.markdown("---")
 st.sidebar.markdown("### Over deze app")
-st.sidebar.write("Deze app gebruikt AI om documenten samen te vatten en te optimaliseren volgens jouw voorkeuren.")
+st.sidebar.write("Deze app gebruikt AI om documenten samen te vatten en te optimaliseren volgens jouw voorkeuren. Je kunt ook chatten met het document om specifieke vragen te stellen.")
