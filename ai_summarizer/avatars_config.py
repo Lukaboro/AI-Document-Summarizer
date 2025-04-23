@@ -1,4 +1,5 @@
 # config_avatar.py - Configuratie voor samenvatter-avatars
+import os
 
 # Avatar definities
 AVATARS = {
@@ -51,4 +52,4 @@ Zorg ervoor dat de samenvatting relevant is voor de gekozen doelgroep en voorkeu
 """
 
 # Pad naar avatar afbeeldingen
-AVATAR_IMAGES_PATH = "avatars"
+AVATAR_IMAGES_PATH = os.path.join(os.path.dirname(__file__), 'avatars')
