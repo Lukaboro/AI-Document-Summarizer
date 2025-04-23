@@ -11,7 +11,7 @@ This project was developed in Belgium by Pieter De Knock as part of a self-study
 With 20+ years of experience in **Asset Management**, **Investment Strategy**, and **Product Communication**, this tool is an experiment to combine **AI** and **finance** into a meaningful application.
 
 ---
-[🎥 Bekijk de demo](https://www.loom.com/share/jouw-video-link)
+[🎥 Bekijk de demo](https://www.loom.com/share/059429e55c98405894d82d07c35771b6?sid=b2ea2b55-c120-4740-8cff-d980e54e4c16)
 
 🚀 Key Features
 - 📥 Upload and combine multiple PDF or Word documents  

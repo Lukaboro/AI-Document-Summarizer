@@ -10,7 +10,7 @@ Dit project werd ontwikkeld in België door Pieter De Knock, in het kader van ee
 Met meer dan 20 jaar ervaring in Asset Management, beleggingsstrategie en productcommunicatie is dit project een experiment om AI en finance op een zinvolle manier te combineren.
 
 ---
-[🎥 Bekijk de demo](https://www.loom.com/share/jouw-video-link)
+[🎥 Bekijk de demo](https://www.loom.com/share/059429e55c98405894d82d07c35771b6?sid=b2ea2b55-c120-4740-8cff-d980e54e4c16)
 
 🚀 Belangrijkste functies
 - 📥 Upload en combineer meerdere PDF- of Word-documenten  
