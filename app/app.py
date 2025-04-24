@@ -160,16 +160,7 @@ for i, (key, avatar) in enumerate(avatars_config.AVATARS.items()):
             )
         except Exception as e:
             st.error(f"Fout bij laden afbeelding: {str(e)}")
-        
-        # Als geen afbeelding gevonden is, toon placeholder
-        if not avatar_found:
-            st.markdown(f"""
-            <div class="avatar-container">
-                <div style="width:80px;height:80px;border-radius:50%;background-color:#f0f0f0;display:flex;justify-content:center;align-items:center;">📷</div>
-                <div class="avatar-name">{avatar['name']}</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
+             
         if st.button(f"Selecteer {avatar['name']}", key=f"avatar_{key}"):
             st.session_state.selected_avatar = key
 
