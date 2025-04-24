@@ -137,37 +137,29 @@ if "selected_avatar" not in st.session_state:
 
 for i, (key, avatar) in enumerate(avatars_config.AVATARS.items()):
     with cols[i]:
-        # Probeer verschillende bestandsformaten
-        avatar_found = False
-        for ext in [".png", ".jpg", ".jpeg"]:
-            avatar_img_path = os.path.join(avatars_config.AVATAR_IMAGES_PATH, f"{key}{ext}")
-            if os.path.exists(avatar_img_path):
-                try:
-                    # Laad de afbeelding en gebruik HTML om de grootte af te dwingen
-                    from PIL import Image
-                    import base64
-                    from io import BytesIO
-                    
-                    img = Image.open(avatar_img_path)
-                    buffered = BytesIO()
-                    img.save(buffered, format=img.format or "PNG")
-                    img_str = base64.b64encode(buffered.getvalue()).decode()
-                    
-                    # Gebruik HTML met ingesloten base64 afbeelding en CSS class
-                    st.markdown(
-                        f"""
-                        <div class="avatar-container">
-                            <img src="data:image/{img.format.lower() if img.format else 'png'};base64,{img_str}" class="uniform-avatar">
-                            <div class="avatar-name">{avatar['name']}</div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-                    avatar_found = True
-                    break
-                except Exception as e:
-                    st.error(f"Fout bij laden afbeelding: {str(e)}")
-                    pass
+        avatar_img_path = os.path.join(avatars_config.AVATAR_IMAGES_PATH, f"{key}.jpg")
+        try:
+            # Laad de afbeelding en gebruik HTML om de grootte af te dwingen
+            from PIL import Image
+            import base64
+            from io import BytesIO
+
+            img = Image.open(avatar_img_path)
+            buffered = BytesIO()
+            img.save(buffered, format=img.format or "PNG")
+            img_str = base64.b64encode(buffered.getvalue()).decode()
+
+            st.markdown(
+                f"""
+                <div class="avatar-container">
+                    <img src="data:image/{img.format.lower() if img.format else 'png'};base64,{img_str}" class="uniform-avatar">
+                    <div class="avatar-name">{avatar['name']}</div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        except Exception as e:
+            st.error(f"Fout bij laden afbeelding: {str(e)}")
         
         # Als geen afbeelding gevonden is, toon placeholder
         if not avatar_found:

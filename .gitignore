@@ -27,7 +27,7 @@ env/
 .idea/
 
 # Afbeeldingen en logging uitsluiten
-app/images/
+# app/images/
 logs/
 avatars/
 
