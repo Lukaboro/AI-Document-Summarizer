@@ -48,7 +48,7 @@ from ai_summarizer import avatars_config
 
 # Laad API sleutel
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
-anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+anthropic_api_key = st.secrets["ANTHROPIC_API_KEY"]
 
 # Configuratie
 st.set_page_config(page_title="Document Summarizer", layout="wide")
