@@ -29,7 +29,7 @@ env/
 # Afbeeldingen en logging uitsluiten
 # app/images/
 logs/
-avatars/
+# avatars/
 
 # kennisbank uitsluiten
 data/kb_data/
