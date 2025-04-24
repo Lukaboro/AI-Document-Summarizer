@@ -135,6 +135,7 @@ cols = st.columns(len(avatars_config.AVATARS))
 if "selected_avatar" not in st.session_state:
     st.session_state.selected_avatar = list(avatars_config.AVATARS.keys())[0]
 
+
 for i, (key, avatar) in enumerate(avatars_config.AVATARS.items()):
     with cols[i]:
         avatar_img_path = os.path.join(avatars_config.AVATAR_IMAGES_PATH, f"{key}.jpg")
