@@ -15,7 +15,7 @@ import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from data.rag_summarizer import enhance_summary_with_rag
-from data.utils import log_feedback
+from data.utils import log_feedback, log_chat_interaction
 
 # Session state initialisatie 
 if 'summary' not in st.session_state:
@@ -566,22 +566,6 @@ def generate_chat_response(query, document_text, summary, chat_history, avatar_s
     except Exception as e:
         st.error(f"Error genereren chatantwoord: {str(e)}")
         return "Er is een fout opgetreden bij het genereren van een antwoord. Probeer het opnieuw."
-# Functie voor chat geschiedenis loggen
-def log_chat_interaction(question, answer, document_info=None):
-    """Log chat interactions for evaluation"""
-    log_file = os.path.join(os.path.dirname(__file__), '..', 'data', 'chat_logs.csv')
-    
-    # Create file with headers if it doesn't exist
-    if not os.path.exists(log_file):
-        with open(log_file, 'w', newline='', encoding='utf-8') as f:
-            f.write("timestamp,question_length,answer_length,avatar,rag_used\n")
-    
-    # Add log entry
-    with open(log_file, 'a', newline='', encoding='utf-8') as f:
-        document_info = document_info or {}
-        log_entry = f"{datetime.now().isoformat()},{len(question)},{len(answer)},"
-        log_entry += f"{document_info.get('avatar', 'unknown')},{document_info.get('rag_used', True)}\n"
-        f.write(log_entry)
 
 # Hoofdsectie
 if uploaded_files:
