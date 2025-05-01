@@ -79,3 +79,5 @@ except Exception as e:
 
 # Pad naar afbeeldingen (ongewijzigd)
 AVATAR_IMAGES_PATH = os.path.join(os.path.dirname(__file__), '..', 'app', 'images')
+
+AVATARS = avatar_config
