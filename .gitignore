@@ -36,6 +36,3 @@ data/kb_data/
 
 # Streamlit secrets
 .streamlit/secrets.toml
-
-# Avatar configuratie
-ai_summarizer/avatars_config.py
