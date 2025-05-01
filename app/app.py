@@ -49,8 +49,19 @@ from ai_summarizer import doelgroepen_config
 from ai_summarizer import avatars_config
 
 # Laad API sleutel
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
-anthropic_api_key = st.secrets["ANTHROPIC_API_KEY"]
+# Probeer API sleutel te laden
+try:
+    # Eerst proberen via Streamlit secrets (werkt in cloud)
+    anthropic_api_key = st.secrets["ANTHROPIC_API_KEY"]
+except Exception as e:
+    try:
+        # Als dat niet lukt, probeer via .env (lokale ontwikkeling)
+        load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
+        anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+        if not anthropic_api_key:
+            st.error("Kon de ANTHROPIC_API_KEY niet vinden in .env bestand")
+    except Exception as e2:
+        st.error(f"Kon de ANTHROPIC_API_KEY niet laden: {e2}")
 
 # Configuratie
 st.set_page_config(page_title="Document Summarizer", layout="wide")
