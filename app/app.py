@@ -1,4 +1,8 @@
 import streamlit as st
+
+# Configuratie EERST (vóór andere Streamlit commando's)
+st.set_page_config(page_title="Document Summarizer", layout="wide")
+
 import PyPDF2
 import docx
 import os
@@ -62,9 +66,6 @@ except Exception as e:
             st.error("Kon de ANTHROPIC_API_KEY niet vinden in .env bestand")
     except Exception as e2:
         st.error(f"Kon de ANTHROPIC_API_KEY niet laden: {e2}")
-
-# Configuratie
-st.set_page_config(page_title="Document Summarizer", layout="wide")
 
 # Styling
 st.markdown("""
