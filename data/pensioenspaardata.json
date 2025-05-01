@@ -1,0 +1,263 @@
+{
+    "fondsen": {
+        "Hermes Pensioenfonds": {
+            "uitgever": "Delen Private Bank",
+            "instapkosten": "3,00%",
+            "lopende kosten min": "1,04%",
+            "lopende kosten max": "1,04%",
+            "duurzaam": "nee",
+            "rendement_5jaar": "",
+            "rendement_10jaar": "",
+            "rendement_20jaar": "",
+            "toelichting": "geen rendementen gevonden"
+        },
+        "Belfius Pension Fund Low Equities": {
+            "uitgever": "Belfius",
+            "instapkosten": "3,00%",
+            "lopende kosten min": "1,12%",
+            "lopende kosten max": "1,12%",
+            "duurzaam": "nee",
+            "rendement_5jaar": "3,30%",
+            "rendement_10jaar": "1,50%",
+            "rendement_20jaar": "2,70%",
+            "toelichting": ""
+        },
+        "Pricos Defensive Responsible Investing": {
+            "uitgever": "KBC",
+            "instapkosten": "2,00%",
+            "lopende kosten min": "1,20%",
+            "lopende kosten max": "1,20%",
+            "duurzaam": "nee",
+            "rendement_5jaar": "2,80%",
+            "rendement_10jaar": "0,90%",
+            "rendement_20jaar": "2,80%",
+            "toelichting": ""
+        },
+        "Pricos Responsible Investing": {
+            "uitgever": "KBC",
+            "instapkosten": "2,00%",
+            "lopende kosten min": "1,21%",
+            "lopende kosten max": "1,21%",
+            "duurzaam": "nee",
+            "rendement_5jaar": "7,40%",
+            "rendement_10jaar": "3%",
+            "rendement_20jaar": "4,30%",
+            "toelichting": ""
+        },
+        "Pricos SRI": {
+            "uitgever": "KBC Belfius",
+            "instapkosten": "2,00%",
+            "lopende kosten min": "1,21%",
+            "lopende kosten max": "1,21%",
+            "duurzaam": "ja",
+            "rendement_5jaar": "",
+            "rendement_10jaar": "",
+            "rendement_20jaar": "",
+            "toelichting": "geen rendementen gevonden"
+        },
+        "Belfius Pension Fund High Equities": {
+            "uitgever": "Belfius",
+            "instapkosten": "3,00%",
+            "lopende kosten min": "1,24%",
+            "lopende kosten max": "1,24%",
+            "duurzaam": "nee",
+            "rendement_5jaar": "7,60%",
+            "rendement_10jaar": "3,50%",
+            "rendement_20jaar": "4,10%",
+            "toelichting": ""
+        },
+        "Star Fund Active": {
+            "uitgever": "ING",
+            "instapkosten": "3,00%",
+            "lopende kosten min": "1,26%",
+            "lopende kosten max": "1,26%",
+            "duurzaam": "nee",
+            "rendement_5jaar": "",
+            "rendement_10jaar": "",
+            "rendement_20jaar": "",
+            "toelichting": "geen rendementen gevonden"
+        },
+        "Star Fund Balanced": {
+            "uitgever": "ING",
+            "instapkosten": "3,00%",
+            "lopende kosten min": "1,26%",
+            "lopende kosten max": "1,26%",
+            "duurzaam": "nee",
+            "rendement_5jaar": "7,10%",
+            "rendement_10jaar": "2,90%",
+            "rendement_20jaar": "3,90%",
+            "toelichting": ""
+        },
+        "Star Fund Moderate": {
+            "uitgever": "ING",
+            "instapkosten": "3,00%",
+            "lopende kosten min": "1,26%",
+            "lopende kosten max": "1,26%",
+            "duurzaam": "nee",
+            "rendement_5jaar": "",
+            "rendement_10jaar": "",
+            "rendement_20jaar": "",
+            "toelichting": "geen rendementen gevonden"
+        },
+        "BNP Paribas B Pension Sustainable Balanced": {
+            "uitgever": "BNP Paribas Fortis, Fintro, Crelan",
+            "instapkosten": "3,00%",
+            "lopende kosten min": "1,26%",
+            "lopende kosten max": "1,26%",
+            "duurzaam": "ja",
+            "rendement_5jaar": "3,90%",
+            "rendement_10jaar": "1,80%",
+            "rendement_20jaar": "4%",
+            "toelichting": ""
+        },
+        "BNP Paribas B Pension Sustainable Growth": {
+            "uitgever": "BNP Paribas Fortis, Fintro, Crelan",
+            "instapkosten": "3,00%",
+            "lopende kosten min": "1,26%",
+            "lopende kosten max": "1,26%",
+            "duurzaam": "ja",
+            "rendement_5jaar": "6,50%",
+            "rendement_10jaar": "2,90%",
+            "rendement_20jaar": "",
+            "toelichting": "Het fonds bestaat nog niet lang genoeg om een rendement op 20 jaar te hebben"
+        },
+        "BNP Paribas B Pension Sustainable Stability": {
+            "uitgever": "BNP Paribas Fortis, Fintro, Crelan",
+            "instapkosten": "3,00%",
+            "lopende kosten min": "1,26%",
+            "lopende kosten max": "1,26%",
+            "duurzaam": "ja",
+            "rendement_5jaar": "1,70%",
+            "rendement_10jaar": "0,60%",
+            "rendement_20jaar": "",
+            "toelichting": "Het fonds bestaat nog niet lang genoeg om een rendement op 20 jaar te hebben"
+        },
+        "VDK Pension Fund": {
+            "uitgever": "VDK",
+            "instapkosten": "2,00%",
+            "lopende kosten min": "1,29%",
+            "lopende kosten max": "1,29%",
+            "duurzaam": "nee",
+            "rendement_5jaar": "8,30%",
+            "rendement_10jaar": "3,90%",
+            "rendement_20jaar": "3,70%",
+            "toelichting": ""
+        },
+        "Belfius Pension Fund Balanced Plus": {
+            "uitgever": "Belfius",
+            "instapkosten": "0,00%",
+            "lopende kosten min": "1,31%",
+            "lopende kosten max": "1,31%",
+            "duurzaam": "nee",
+            "rendement_5jaar": "5,40%",
+            "rendement_10jaar": "2,30%",
+            "rendement_20jaar": "",
+            "toelichting": "Het fonds bestaat nog niet lang genoeg om een rendement op 20 jaar te hebben"
+        },
+        "Argenta Pension Fund": {
+            "uitgever": "Argenta",
+            "instapkosten": "0,00%",
+            "lopende kosten min": "1,32%",
+            "lopende kosten max": "1,32%",
+            "duurzaam": "nee",
+            "rendement_5jaar": "7,50%",
+            "rendement_10jaar": "4%",
+            "rendement_20jaar": "4,90%",
+            "toelichting": ""
+        },
+        "Argenta Pension Fund Defensive": {
+            "uitgever": "Argenta",
+            "instapkosten": "0,00%",
+            "lopende kosten min": "1,32%",
+            "lopende kosten max": "1,32%",
+            "duurzaam": "nee",
+            "rendement_5jaar": "2,50%",
+            "rendement_10jaar": "1,50%",
+            "rendement_20jaar": "",
+            "toelichting": "Het fonds bestaat nog niet lang genoeg om een rendement op 20 jaar te hebben"
+        },
+        "Inter-Beurs-Hermes": {
+            "uitgever": "Dierickx, Leys",
+            "instapkosten": "0,00%",
+            "lopende kosten min": "1,69%",
+            "lopende kosten max": "1,69%",
+            "duurzaam": "nee",
+            "rendement_5jaar": "7,10%",
+            "rendement_10jaar": "3,20%",
+            "rendement_20jaar": "4,10%",
+            "toelichting": ""
+        }
+    },
+    "verzekeringen": {
+        "AG Insurance": {
+            "uitgever": "AG Insurance",
+            "instapkosten": "4,00%",
+            "lopende kosten min": "2,05%",
+            "lopende kosten max": "2,53%",
+            "duurzaam": "nee",
+            "rendement_5jaar": "",
+            "rendement_10jaar": "",
+            "rendement_20jaar": "",
+            "toelichting": "Voor pensioenfondsen uitgegeven door verzekeraars is er niet ingevuld in de kolommen rendement_5jaar, rendement_10jaar en rendement_20jaar omdat het rendement afhankeliijk is van de gekozen fondsen binnen de verzekering. Gezien er ook kan gecombineerd worden is het rendement verschillend van portefeuille tot portefeuille"
+        },
+        "Allianz": {
+            "uitgever": "Allianz",
+            "instapkosten": "6,00%",
+            "lopende kosten min": "0,87%",
+            "lopende kosten max": "3,01%",
+            "duurzaam": "nee",
+            "rendement_5jaar": "",
+            "rendement_10jaar": "",
+            "rendement_20jaar": "",
+            "toelichting": "Voor pensioenfondsen uitgegeven door verzekeraars is er niet ingevuld in de kolommen rendement_5jaar, rendement_10jaar en rendement_20jaar omdat het rendement afhankeliijk is van de gekozen fondsen binnen de verzekering. Gezien er ook kan gecombineerd worden is het rendement verschillend van portefeuille tot portefeuille"
+        },
+        "Athora": {
+            "uitgever": "Athora",
+            "instapkosten": "5,00%",
+            "lopende kosten min": "0,60%",
+            "lopende kosten max": "2,50%",
+            "duurzaam": "nee",
+            "rendement_5jaar": "",
+            "rendement_10jaar": "",
+            "rendement_20jaar": "",
+            "toelichting": "Voor pensioenfondsen uitgegeven door verzekeraars is er niet ingevuld in de kolommen rendement_5jaar, rendement_10jaar en rendement_20jaar omdat het rendement afhankeliijk is van de gekozen fondsen binnen de verzekering. Gezien er ook kan gecombineerd worden is het rendement verschillend van portefeuille tot portefeuille"
+        },
+        "Baloîse": {
+            "uitgever": "Baloîse",
+            "instapkosten": "2,00%",
+            "lopende kosten min": "2,60%",
+            "lopende kosten max": "2,60%",
+            "duurzaam": "nee",
+            "rendement_5jaar": "",
+            "rendement_10jaar": "",
+            "rendement_20jaar": "",
+            "toelichting": "Voor pensioenfondsen uitgegeven door verzekeraars is er niet ingevuld in de kolommen rendement_5jaar, rendement_10jaar en rendement_20jaar omdat het rendement afhankeliijk is van de gekozen fondsen binnen de verzekering. Gezien er ook kan gecombineerd worden is het rendement verschillend van portefeuille tot portefeuille"
+        },
+        "P&V/Vivium": {
+            "uitgever": "P&V/Vivium",
+            "instapkosten": "3,70%",
+            "lopende kosten min": "1,43%",
+            "lopende kosten max": "2,66%",
+            "duurzaam": "nee",
+            "rendement_5jaar": "",
+            "rendement_10jaar": "",
+            "rendement_20jaar": "",
+            "toelichting": "Voor pensioenfondsen uitgegeven door verzekeraars is er niet ingevuld in de kolommen rendement_5jaar, rendement_10jaar en rendement_20jaar omdat het rendement afhankeliijk is van de gekozen fondsen binnen de verzekering. Gezien er ook kan gecombineerd worden is het rendement verschillend van portefeuille tot portefeuille"
+        }
+    },
+    "metadata": {
+        "algemene_toelichtingen": [
+            "lopende kosten zijn per jaar",
+            "instapkosten zijn éénmalig bij de storting",
+            "via een verzekeraar worden de instapkosten in mindering gebracht van gestorte som",
+            "via een bank worden de instapkosten bovenop gestort bedrag gerekend",
+            "fiscaal wordt een jaarlijkse storting onder bepaalde voorwaarden aangemoedigd tot 980 euro (via een belastingvermindering op 30% van het gestorte kapitaal)",
+            "Fiscaal is er ook een verhoogde storting mogelijk tot 1240 euro en is het voordeel 25% belastingvermindering op het gestort bedrag.",
+            "Beide fiscale varianten hebben voor een klant een gelijkaardig fiscaal voordeel zodat het grootste verschil is dat er met de verhoogde storting een groter kapitaal wordt opgebouwd, maar er ook meer kapitaal is ingelegd.",
+            "Als er geen % is ingevuld bij de kolommen rendement_5jaar, rendement_10jaar en rendement_20jaar dan is dit omdat het fonds niet lang genoeg bestaat of dat we de gegevens niet hebben.",
+            "Voor pensioenfondsen uitgegeven door verzekeraars is er niet ingevuld in de kolommen rendement_5jaar, rendement_10jaar en rendement_20jaar omdat het rendement afhankeliijk is van de gekozen fondsen binnen de verzekering. Gezien er ook kan gecombineerd worden is het rendement verschillend van portefeuille tot portefeuille",
+            "Voor pensioenfondsen uitgegeven door verzekeraars zijn de lopende kosten afhankelijk van de gekozen fondsen binnen de verzekering. Gezien er ook verschillende beleggingen kunnen gecombineerd worden zijn de lopende kosten verschillend van portefeuille tot portefeuille"
+        ],
+        "laatste_update": "2025-04-15"
+    }
+}

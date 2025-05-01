@@ -16,6 +16,8 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from data.rag_summarizer import enhance_summary_with_rag
 from data.utils import log_feedback, log_chat_interaction
+from data.question_classifier import classificeer_vraag_met_llm
+from data.pension_calculator import bereken_op_kolom
 
 # Session state initialisatie 
 if 'summary' not in st.session_state:
@@ -464,22 +466,73 @@ def generate_chat_response(query, document_text, summary, chat_history, avatar_s
                 # Valt terug op het volledige document als RAG faalt
                 pass
         
+        
+        # --- NIEUW: semantische interpretatie van de vraag ---
+        veld, berekeningstype = classificeer_vraag_met_llm(query, api_key=anthropic_api_key)
+        print(f"[DEBUG] Geclassificeerd veld: {veld}")
+        print(f"[DEBUG] Geclassificeerd berekeningstype: {berekeningstype}")
+
+        # --- NIEUW: harde berekening ---
+        harde_feit = ""
+        if veld and berekeningstype != "none":
+            try:
+                resultaat = bereken_op_kolom(veld, berekeningstype)
+                print(f"[DEBUG] Resultaat van berekening: {resultaat}")
+                if resultaat:
+                    harde_feit = f"\n\n[HARD FEIT UIT PENSIOENDATA]\n{resultaat}"
+            except Exception as e:
+                st.warning(f"Kon geen berekening uitvoeren: {e}")
+
+        # --- RAG + toelichtingen ---
+        context_chunks = document_text
+
+        if use_rag:
+            try:
+                enhanced_text, context_info = enhance_summary_with_rag(client, document_text)
+                if isinstance(context_info, dict) and 'relevante_context' in context_info:
+                    context_chunks += "\n\n[RELEVANTE CONTEXT]\n" + context_info['relevante_context']
+                elif isinstance(context_info, dict) and 'relevante_items' in context_info:
+                    context_chunks += "\n\n[RELEVANTE ITEMS]\n" + ", ".join(context_info['relevante_items'])
+            except Exception as e:
+                st.info("RAG werkt niet, val terug op document.")
+
+        # Pensioenspecifieke toelichtingsteksten uit vectorstore of fallback
+        from data.rag_summarizer import get_pension_info_with_notes
+        pension_context = get_pension_info_with_notes(query)
+        if pension_context:
+            context_chunks += f"\n\n[PENSIOENINFO]\n{pension_context}"
+
+        # Voeg harde feit ALS LAATSTE toe
+        if harde_feit:
+            print("[DEBUG] Harde feit wordt toegevoegd aan context_chunks.")
+            context_chunks += harde_feit
+        else:
+            print("[DEBUG] Geen harde feit beschikbaar.")
+                
         # Bouw system prompt met behoud van avatar persoonlijkheid
         system_prompt = f"""
         {avatar_system}
         
         Je bent een persoonlijke financiële assistent met een unieke communicatiestijl.
-        
+
         BELANGRIJKE INSTRUCTIES:
         1. Behoud ALTIJD je persoonlijke communicatiestijl wanneer je antwoord geeft.
-        2. Baseer je antwoord UITSLUITEND op informatie uit het document.
-        3. Als de vraag niet beantwoord kan worden met de informatie in het document, zeg dit op een vriendelijke manier in je eigen stijl.
+        2. Baseer je antwoord UITSLUITEND op informatie uit het document én de aanvullende pensioendata die meegegeven wordt.
+        3. Als de informatie niet in het document staat, maar wel in de pensioendata, geef dan duidelijk aan dat je het van daar hebt gehaald. Als het nergens staat, zeg dat dan vriendelijk in je eigen stijl.
         4. Gebruik geen externe kennis die niet in het document staat.
         5. Je mag het document nooit rechtstreeks citeren zonder het aan te passen naar je eigen stijl.
         
         DISCLAIMER: Benadruk waar nodig dat je antwoorden gebaseerd zijn op het document en geen persoonlijk financieel advies zijn.
         """
         
+        # Toevoegen van context uit pensioendata
+        from data.rag_summarizer import get_pension_info_with_notes  # helemaal bovenaan je bestand plaatsen
+
+        # Voeg pensioenspaarcontext toe (indien relevant)
+        pension_context = get_pension_info_with_notes(query)
+        if pension_context:
+            context_chunks += f"\n\n[PENSIOENINFO]\n{pension_context}"
+
         # Voorbereiding van de context voor het model
         context = f"""
         DOCUMENT SAMENVATTING:
@@ -800,3 +853,26 @@ else:
 st.sidebar.markdown("---")
 st.sidebar.markdown("### Over deze app")
 st.sidebar.write("Deze app gebruikt AI om documenten samen te vatten en te optimaliseren volgens jouw voorkeuren. Je kunt ook chatten met het document om specifieke vragen te stellen.")
+
+# Voeg dit toe aan je app (bijvoorbeeld aan het einde)
+# Een 'geheime' admin-knop die niet opvallend zichtbaar is
+admin_expander = st.sidebar.expander("👨‍💻 Ontwikkelaarsopties", expanded=False)
+with admin_expander:
+    admin_code = st.text_input("Admin code:", type="password")
+    if admin_code == "AI-DOCUMENT-SUMMARIZER":  # Vervang dit door je eigen code
+        st.success("Admin modus actief")
+        
+        st.subheader("Chat Logs")
+        if 'chat_logs_df' in st.session_state and not st.session_state.chat_logs_df.empty:
+            st.dataframe(st.session_state.chat_logs_df)
+            
+            # Exporteer mogelijkheid
+            csv = st.session_state.chat_logs_df.to_csv(index=False)
+            st.download_button(
+                "Download chat logs", 
+                data=csv,
+                file_name="chat_logs_export.csv",
+                mime="text/csv"
+            )
+        else:
+            st.info("Geen chat logs beschikbaar in deze sessie")

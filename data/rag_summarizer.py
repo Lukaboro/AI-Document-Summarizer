@@ -1,7 +1,8 @@
 import os
 import sys
-import anthropic
+import json
 import logging
+from pathlib import Path
 
 # Configureer logging
 logging.basicConfig(
@@ -15,99 +16,113 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from data.vector_store import VectorStore
 from data.knowledge_base import get_knowledge_item
 
+# ===== PENSIOENINTEGRATIE =====
+PENSION_DATA_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'pensioenspaardata.json')
+
+def load_pension_data():
+    try:
+        with open(PENSION_DATA_PATH, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        print(f"⚠️ Pensioenspaardata niet gevonden in {PENSION_DATA_PATH}")
+        return {"fondsen": {}, "verzekeringen": {}, "metadata": {}}
+
+def get_pension_info_with_notes(query, pension_data=None):
+    if pension_data is None:
+        pension_data = load_pension_data()
+
+    pension_keywords = ["pensioen", "tak 21", "tak 23", "spaarfonds", "pensioenspaar", "verzekering", "rendement"]
+    if not any(k in query.lower() for k in pension_keywords):
+        return ""
+
+    context = ""
+    found = False
+
+    for naam, f in pension_data["fondsen"].items():
+        if naam.lower() in query.lower():
+            context += f"Informatie over {naam} (pensioenspaarfonds):\n"
+            context += f"- Uitgever: {f['uitgever']}\n"
+            context += f"- Instapkosten: {f['instapkosten']}\n"
+            context += f"- Lopende kosten: {f['lopende_kosten_min']} – {f['lopende_kosten_max']}\n"
+            context += f"- Duurzaam: {f['duurzaam']}\n"
+            context += f"- Rendement 5 jaar: {f['rendement_5jaar']}\n"
+            context += f"- Rendement 10 jaar: {f['rendement_10jaar']}\n"
+            context += f"- Rendement 20 jaar: {f['rendement_20jaar']}\n"
+            if f.get("toelichting"):
+                context += f"\nToelichting: {f['toelichting']}\n"
+            found = True
+            break
+
+    if not found:
+        for naam, v in pension_data["verzekeringen"].items():
+            if naam.lower() in query.lower():
+                context += f"Informatie over {naam} (pensioenspaarverzekering):\n"
+                context += f"- Uitgever: {v['uitgever']}\n"
+                context += f"- Instapkosten: {v['instapkosten']}\n"
+                context += f"- Lopende kosten: {v['lopende_kosten_min']} – {v['lopende_kosten_max']}\n"
+                context += f"- Duurzaam: {v['duurzaam']}\n"
+                context += f"- Rendement 5 jaar: {v['rendement_5jaar']}\n"
+                context += f"- Rendement 10 jaar: {v['rendement_10jaar']}\n"
+                context += f"- Rendement 20 jaar: {v['rendement_20jaar']}\n"
+                if v.get("toelichting"):
+                    context += f"\nToelichting: {v['toelichting']}\n"
+                found = True
+                break
+
+    if "metadata" in pension_data and "algemene_toelichtingen" in pension_data["metadata"]:
+        context += "\nAlgemene toelichtingen:\n"
+        for note in pension_data["metadata"]["algemene_toelichtingen"]:
+            context += f"- {note}\n"
+
+    return context
+
+# ===== RAG FUNCTIE =====
 def get_relevant_context(query, max_items=10, relevance_threshold=1.1, top_k=None):
-    """
-    Haal relevante context op uit de kennisbank voor een query, 
-    beperkt door zowel aantal als relevantie.
-    
-    Args:
-        query: De zoekopdracht/vraag
-        max_items: Maximum aantal items om terug te geven
-        relevance_threshold: Drempelwaarde voor relevantie (lagere waarde = strengere filter)
-        top_k: Voor backward compatibility, wordt gebruikt als max_items als het gegeven is
-    """
-    # Gebruik top_k als het gegeven is (backward compatibility)
     if top_k is not None:
         max_items = top_k
-        
-    # Log de zoekquery
+
     logging.info(f"Zoekquery voor kennisbank: {query[:100]}...")
     print(f"Zoekquery voor kennisbank: {query[:100]}...")
-    
+
     vector_store = VectorStore()
-    # Haal meer items op dan we uiteindelijk zullen gebruiken
     initial_results = vector_store.search(query, top_k=max_items * 2)
-    
-        # VOEG HIER DE DEBUG CODE TOE:
+
     print("\nDEBUG AFSTANDEN:")
     print("Scores van de eerste 5 resultaten:")
     for i, r in enumerate(initial_results[:5]):
         print(f"Item {i}: afstand = {r.get('distance')}")
 
-    # Tel het aantal resultaten bij verschillende drempelwaarden
     for thresh in [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
         count = len([r for r in initial_results if r.get('distance', float('inf')) < thresh])
         print(f"Aantal items met afstand < {thresh}: {count}")
 
-    print()  # Extra regel voor leesbaarheid
-
-    # Filter op basis van relevance_threshold
-    # Voor FAISS met L2-afstand zijn lagere waarden beter (dichterbij = relevanter)
     filtered_results = [r for r in initial_results if r.get('distance', float('inf')) < relevance_threshold]
-    
-    # Beperk tot het maximum aantal
     final_results = filtered_results[:max_items]
-    
-    # Log statistieken over de resultaten
-    logging.info(f"Totaal gevonden: {len(initial_results)}, " 
-                f"Na relevantiefilter: {len(filtered_results)}, "
-                f"Gebruikt: {len(final_results)}")
-    print(f"Totaal gevonden: {len(initial_results)}, " 
-         f"Na relevantiefilter: {len(filtered_results)}, "
-         f"Gebruikt: {len(final_results)}")
-    
+
+    logging.info(f"Totaal gevonden: {len(initial_results)}, Na relevantiefilter: {len(filtered_results)}, Gebruikt: {len(final_results)}")
+    print(f"Totaal gevonden: {len(initial_results)}, Na relevantiefilter: {len(filtered_results)}, Gebruikt: {len(final_results)}")
+
     context = []
     relevant_items = []
-    
+
     for idx, result in enumerate(final_results):
-        # Gebruik de titel uit het resultaat
         title = result.get('title', f"Kennisbank item #{idx+1}")
-        
-        # Haal de content uit de chunk
         content = result.get('chunk', '')
-        
-        # Gebruik distance als score
         score = result.get('distance', 'onbekend')
-        
-        # Log item info met titel en score
-        item_info = f"Item {idx+1}: '{title}' (score: {score})"
-        logging.info(item_info)
-        print(item_info)
-        
-        # Voeg toe aan context en relevante items
+
+        logging.info(f"Item {idx+1}: '{title}' (score: {score})")
+        print(f"Item {idx+1}: '{title}' (score: {score})")
+
         context.append(f"TERM: {title}\nDEFINITIE: {content}")
         relevant_items.append(title)
-    
+
     return "\n\n".join(context), relevant_items
 
+# ===== SAMENVATTING MET CONTEXT =====
 def enhance_summary_with_rag(client, text, initial_summary=None, top_k=10):
-    """
-    Voegt relevante context uit de kennisbank toe aan het document.
-    Dit wijzigt niet je bestaande prompt-structuur, maar verrijkt de input.
-    
-    Args:
-        client: De Anthropic client
-        text: De originele documenttekst
-        initial_summary: Een optionele initiële samenvatting om de relevante context te bepalen
-        top_k: Aantal relevante context-items om op te halen
-    
-    Returns:
-        Een tuple van (verrijkte_tekst, context_info_dict)
-    """
-    # Als er geen initiële samenvatting is gegeven, genereer er een om relevante context te vinden
     if not initial_summary:
         system_query = "Je taak is om een korte samenvatting (max. 100 woorden) te maken van dit document, gericht op de belangrijkste financiële kernpunten, termen en concepten."
-        
+
         query_message = client.messages.create(
             model="claude-3-5-sonnet-20241022",
             max_tokens=1000,
@@ -115,13 +130,11 @@ def enhance_summary_with_rag(client, text, initial_summary=None, top_k=10):
             system=system_query,
             messages=[{"role": "user", "content": f"Geef een beknopte samenvatting:\n\n{text}"}]
         )
-        
+
         initial_summary = query_message.content[0].text
-    
-    # Vind relevante context op basis van de samenvatting
+
     relevant_context, relevant_items = get_relevant_context(initial_summary, top_k=top_k)
-    
-    # Bereid de verrijkte tekst voor
+
     enhanced_text = f"""
 [RELEVANTE KENNISBANK INFORMATIE]
 {relevant_context}
@@ -131,12 +144,18 @@ def enhance_summary_with_rag(client, text, initial_summary=None, top_k=10):
 {text}
 [EINDE ORIGINEEL DOCUMENT]
 """
-    
-    # Maak een context info dictionary voor betere transparantie
+
     context_info = {
         "aantal_items": len(relevant_items),
         "relevante_items": relevant_items,
-        "toelichting": "De samenvatting is verrijkt met relevante achtergrondinformatie uit de financiële kennisbank, waaronder definities, veelgestelde vragen of marktdata die relevant zijn voor dit document."
+        "toelichting": "De samenvatting is verrijkt met relevante achtergrondinformatie uit de financiële kennisbank."
     }
-    
+
+    # Voeg extra context toe indien pensioenvraag
+    pension_context = get_pension_info_with_notes(initial_summary)
+    if pension_context:
+        enhanced_text += f"\n\n[EXTRA CONTEXT – Pensioensparen]\n{pension_context}\n[EINDE CONTEXT]"
+        context_info["relevante_items"].append("pensioenspaarbeleggingen")
+        context_info["toelichting"] += "\nDe samenvatting bevat ook actuele pensioenspaarinformatie."
+
     return enhanced_text, context_info

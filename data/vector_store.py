@@ -174,3 +174,34 @@ class VectorStore:
                 self.id_to_path = pickle.load(f)
             return True
         return False
+    
+    def add_pension_data_to_vectorstore(self, pension_data=None):
+        """Voeg alleen algemene pensioentoelichtingen toe aan vector database voor semantisch zoeken."""
+
+        if pension_data is None:
+            try:
+                pension_data_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'pensioenspaardata.json')
+                with open(pension_data_path, 'r', encoding='utf-8') as f:
+                    pension_data = json.load(f)
+            except (FileNotFoundError, json.JSONDecodeError):
+                print("Geen pensioendata gevonden om toe te voegen aan vectorstore.")
+                return
+
+        documents_added = 0
+
+        # Enkel de algemene toelichtingen toevoegen
+        if pension_data.get("metadata", {}).get("algemene_toelichtingen"):
+            for idx, toelichting in enumerate(pension_data["metadata"]["algemene_toelichtingen"]):
+                doc_text = f"Pensioenspaartoelichting #{idx+1}:\n{toelichting}"
+
+                self.add_document_with_metadata(
+                    doc_text=doc_text.strip(),
+                    doc_path='pensioenspaardata.json',
+                    doc_id=f"toelichting_{idx+1}",
+                    metadata={"type": "algemene_toelichting", "source": "pensioenspaardata"}
+                )
+                documents_added += 1
+
+        print(f"Pensioenspaardata: {documents_added} toelichtingen succesvol toegevoegd aan vectorstore.")
+
+        return self
